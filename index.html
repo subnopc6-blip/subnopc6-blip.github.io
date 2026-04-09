@@ -10,20 +10,27 @@
 
 <div class="drawer-overlay" id="drawer-overlay"></div>
 <div class="drawer" id="drawer">
-    <div class="menu-item active" id="menu-main" onclick="view('main')" data-i18n="menu_home">Home</div>
-    <div class="menu-item" id="menu-reg" onclick="openModal('reg-modal')" data-i18n="menu_reg">Product Registration</div>
-    <div class="menu-item" id="menu-audit" onclick="view('audit')" data-i18n="menu_audit">Inventory Audit</div>
-    <div class="menu-item" id="menu-history" onclick="view('history')" data-i18n="menu_history">History</div>
-    <div class="menu-item" id="menu-how-to" onclick="view('how-to')" data-i18n="menu_how">How To Use</div>
+    <div class="menu-item active" id="menu-main" onclick="view('main')" data-i18n="menu_home">ホーム</div>
+    <div class="menu-item" id="menu-reg" onclick="openModal('reg-modal')" data-i18n="menu_reg">新規商品登録</div>
+    <div class="menu-item" id="menu-audit" onclick="view('audit')" data-i18n="menu_audit">棚卸モード</div>
+    <div class="menu-item" id="menu-history" onclick="view('history')" data-i18n="menu_history">入出庫履歴</div>
+    <div class="menu-item" id="menu-how-to" onclick="view('how-to')" data-i18n="menu_how">使い方ガイド</div>
+    
     <div class="menu-divider"></div>
-    <div id="auth-section"></div>
+    
+    <div id="auth-section">
+        <div class="menu-item" onclick="login()" data-i18n="menu_login">ログイン / 新規登録</div>
+    </div>
+    
     <div class="menu-divider"></div>
-    <div class="menu-item danger" onclick="initApp()" data-i18n="menu_init">Initialize Data</div>
+    
+    <div class="menu-item danger" onclick="confirmInit()" data-i18n="menu_init">ローカルデータ初期化</div>
+
     <div class="user-info-bar" id="user-display" style="display:none;">
-        <img class="user-avatar" id="user-photo" src="" alt="">
+        <img class="user-avatar" id="user-photo" src="" alt="User">
         <div>
-            <div id="user-name" style="font-weight: 600;"></div>
-            <div id="sync-status" style="font-size: 10px;">Cloud Synced</div>
+            <div id="user-name" style="font-weight: 600;">Guest</div>
+            <div id="sync-status" style="font-size: 10px; color: var(--success);">Cloud Synced</div>
         </div>
     </div>
 </div>
@@ -34,37 +41,55 @@
     <button class="lang-btn" id="lang-toggle">EN</button>
 </header>
 
-<div class="dashboard-controls" id="dashboard-date-ctrl">
-    <label data-i18n="lbl_record_date">Date:</label>
-    <input type="datetime-local" id="custom-record-date" class="date-input">
+<div id="main-controls">
+    <div class="dashboard-controls">
+        <label data-i18n="lbl_record_date">記録日:</label>
+        <input type="datetime-local" id="custom-record-date" class="date-input">
+    </div>
+
+    <div class="mode-selector">
+        <div class="mode-tab active" id="tab-sale" onclick="switchOpMode('sale')" data-i18n="tab_sale">販売 (SALE)</div>
+        <div class="mode-tab" id="tab-stock_in" onclick="switchOpMode('stock_in')" data-i18n="tab_stock_in">納品 (STOCK IN)</div>
+    </div>
 </div>
 
-<div class="mode-selector" id="mode-selector">
-    <div class="mode-tab active" id="tab-sale" onclick="switchOpMode('sale')" data-i18n="tab_sale">SALE</div>
-    <div class="mode-tab" id="tab-stock_in" onclick="switchOpMode('stock_in')" data-i18n="tab_stock_in">STOCK IN</div>
-</div>
+<main id="app-content">
+    </main>
 
-<main id="app-content"></main>
-
-<button class="fab" id="confirm-fab">
-    <span data-i18n="btn_confirm">CONFIRM</span> <span class="fab-badge" id="badge">0</span>
+<button class="fab" id="confirm-fab" onclick="confirmTransaction()">
+    <span data-i18n="btn_confirm">確定する</span> 
+    <span class="fab-badge" id="badge">0</span>
 </button>
 
 <div class="overlay" id="reg-modal">
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <h2 style="font-size:16px; margin:0;" data-i18n="reg_title">Register Item</h2>
-            <button onclick="closeModal()" style="border:none; background:none; font-size:20px; cursor:pointer;">×</button>
+            <h2 style="font-size:16px; margin:0;" data-i18n="reg_title">商品登録</h2>
+            <button onclick="closeModal()" style="border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
         </div>
         <div class="reg-grid">
-            <div style="grid-column: span 2;"><label data-i18n="lbl_name">Item Name</label><input type="text" id="reg-name"></div>
-            <div><label data-i18n="lbl_buy">Cost (¥)</label><input type="number" id="reg-buy"></div>
-            <div><label data-i18n="lbl_sell">Price (¥)</label><input type="number" id="reg-sell"></div>
-            <div style="grid-column: span 2;"><label data-i18n="lbl_supplier">Supplier</label><input type="text" id="reg-supplier"></div>
-            <div><label data-i18n="lbl_expiry">Expiry Date</label><input type="date" id="reg-expiry"></div>
-            <div><label data-i18n="lbl_order_point">Min Stock Alert</label><input type="number" id="reg-order-point" value="5"></div>
+            <div style="grid-column: span 2;">
+                <label data-i18n="lbl_name">商品名</label>
+                <input type="text" id="reg-name" placeholder="例: コーヒー豆">
+            </div>
+            <div>
+                <label data-i18n="lbl_buy">仕入単価 (¥)</label>
+                <input type="number" id="reg-buy" value="0">
+            </div>
+            <div>
+                <label data-i18n="lbl_sell">販売単価 (¥)</label>
+                <input type="number" id="reg-sell" value="0">
+            </div>
+            <div>
+                <label data-i18n="lbl_order_point">発注点 (最小在庫)</label>
+                <input type="number" id="reg-order-point" value="5">
+            </div>
+            <div>
+                <label data-i18n="lbl_expiry">期限管理</label>
+                <input type="date" id="reg-expiry">
+            </div>
         </div>
-        <button onclick="saveProduct()" class="save-btn" data-i18n="btn_save">Save Item</button>
+        <button onclick="saveProduct()" class="save-btn" data-i18n="btn_save">商品情報を保存</button>
     </div>
 </div>
 
